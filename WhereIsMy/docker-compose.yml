@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  # Наша база данных PostgreSQL
+  postgres-db:
+    image: postgres:15-alpine
+    container_name: whereismy-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: WhereIsMyDb
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: whereismy-rabbitmq
+    ports:
+      - "5672:5672"   # Порт для отправки сообщений из C#
+      - "15672:15672" # Панель управления RabbitMQ в браузере
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+
+volumes:
+  pgdata:

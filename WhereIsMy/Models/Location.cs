@@ -5,7 +5,7 @@ public class Location
     public string Name { get; set; }
     
     // Привязка к юзеру
-    public string UserId { get; set; }
+    public int UserId { get; set; }
     public User User { get; set; } 
 
     // Навигационное свойство: список вещей внутри этой локации

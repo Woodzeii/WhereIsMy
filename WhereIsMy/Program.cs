@@ -1,9 +1,17 @@
 using Microsoft.AspNetCore.Builder;
+using Microsoft.EntityFrameworkCore;
+using WhereIsMy;
 
 // БЛОК 1: Инициализация строителя приложения
 var builder = WebApplication.CreateBuilder(args);
 
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+
+
+
 // БЛОК 2: Регистрация зависимостей в DI-контейнере
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString)); 
 builder.Services.AddEndpointsApiExplorer(); 
 builder.Services.AddOpenApi(); // Регистрируем сервисы для генерации спецификации OpenAPI (Swagger)          
 
@@ -20,7 +28,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Тестовый эндпоинт, который отобразится в интерфейсе Swagger
+
 app.MapGet("/weather", () => new[] { "Sunny", "Cloudy", "Rainy" })
    .WithName("GetWeatherForecast")
    .WithDescription("Retrieves a list of weather forecasts."); 

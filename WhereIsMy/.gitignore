@@ -1,0 +1,45 @@
+## Visual Studio Build Outputs
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Re]leasePublic/
+x64/
+x86/
+build/
+bld/
+[Bin]/
+[Obj]/
+bin/
+obj/
+
+## NuGet Packages
+*.nupkg
+# NuGet formal packages folder
+**/packages/*
+# Uncomment if using NuGet package restore within the project
+#!**/packages/repositories.config
+**/Paket.Restore.targets
+
+## .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+
+## Visual Studio Cache and Code Lens
+.vs/
+MemoryDumps/
+
+## User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Rider & JetBrains
+.idea/
+*.sln.DotSettings.user

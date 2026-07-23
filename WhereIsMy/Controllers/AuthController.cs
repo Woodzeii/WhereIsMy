@@ -91,7 +91,24 @@ public class AuthController : ControllerBase
             return NotFound(new { message = "Пользователь не найден" });
         }
 
-        return Ok(new { id = user.Id, name = user.Name, login = user.Login });
+        var locations = await _dbContext.Locations
+            .Where(x => x.UserId == userId)
+            .Select(x => new { id = x.Id, name = x.Name })
+            .ToListAsync();
+
+        var items = await _dbContext.Items
+            .Where(x => x.UserId == userId)
+            .Select(x => new { id = x.Id, name = x.Name, locationId = x.LocationId })
+            .ToListAsync();
+
+        return Ok(new
+        {
+            id = user.Id,
+            name = user.Name,
+            login = user.Login,
+            locations,
+            items
+        });
     }
 
     private int GetCurrentUserId()

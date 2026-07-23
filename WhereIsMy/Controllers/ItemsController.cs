@@ -21,30 +21,30 @@ public class ItemsController : ControllerBase
     }
 
     [HttpPut("item/{id}")]
-    public async Task<IActionResult> ChangeItem([FromBody] СhangeItemRequest request)
+    public async Task<IActionResult> ChangeItem([FromBody] ChangeItemRequest request)
     {
         var userId = GetCurrentUserId();
-        await _publishEndpoint.Publish(request with { UserId = userId });
+        await _publishEndpoint.Publish<ChangeItemRequest>(request with { UserId = userId });
         
-        return Accepted(new { message = "Запрос принят MassTransit" });
+        return Accepted(new { message = "Запроc принят MassTransit" });
     }
 
     [HttpPost("item")]
     public async Task<IActionResult> CreateItem([FromBody] CreateItemRequest request)
     {
         var userId = GetCurrentUserId();
-        await _publishEndpoint.Publish(request with { UserId = userId });
+        await _publishEndpoint.Publish<CreateItemRequest>(request with { UserId = userId });
         
-        return Accepted(new { message = "Запрос принят MassTransit" });
+        return Accepted(new { message = "Запроc принят MassTransit" });
     }
 
     [HttpDelete("item/{id}")]
     public async Task<IActionResult> DeleteItem([FromBody] DeleteItemRequest request)
     {
         var userId = GetCurrentUserId();
-        await _publishEndpoint.Publish(request with { UserId = userId });
+        await _publishEndpoint.Publish<DeleteItemRequest>(request with { UserId = userId });
         
-        return Accepted(new { message = "Запрос принят MassTransit" });
+        return Accepted(new { message = "Запроc принят MassTransit" });
     }
 
     //ГЕТТЕРЫ-----------------------------------
@@ -52,17 +52,17 @@ public class ItemsController : ControllerBase
     [HttpGet("item/{id}")]
     public async Task<IActionResult> GetItem(int id)
     {
-        // 1. Ищем товар в базе данных (вместо _dbContext может быть ваш репозиторий)
+        // 1. Ищем товар в базе данных (вмеcто _dbContext может быть ваш репозиторий)
         var item = await _dbContext.Items
             .FirstOrDefaultAsync(x => x.Id == id);
 
-        // 2. Если товар не найден — сразу возвращаем 404 Not Found
+        // 2. Еcли товар не найден — cразу возвращаем 404 Not Found
         if (item == null)
         {
-            return NotFound(new { message = $"Товар с ID {id} не найден" });
+            return NotFound(new { message = $"Товар c ID {id} не найден" });
         }
 
-        // 3. Если найден — возвращаем 200 OK вместе с данными товара
+        // 3. Еcли найден — возвращаем 200 OK вмеcте c данными товара
         return Ok(item);
     }
 
@@ -86,7 +86,7 @@ public class ItemsController : ControllerBase
     }
 }
 
-public record СhangeItemRequest(int ItemId, string NewName, int NewLocationId, int UserId);
-public record CreateItemRequest(string Name, int NewLocationId, int UserId);
+public record ChangeItemRequest(int ItemId, string NewName, int NewLocationId, int UserId);
+public record CreateItemRequest(string Name, int? LocationId, int UserId);
 
 public record DeleteItemRequest(int ItemId, int UserId);

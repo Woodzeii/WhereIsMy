@@ -2,7 +2,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace WhereIsMy;
-public class ChangeItemConsumer : IConsumer<СhangeItemRequest>
+public class ChangeItemConsumer : IConsumer<ChangeItemRequest>
 {
     private readonly AppDbContext _dbContext;
 
@@ -11,7 +11,7 @@ public class ChangeItemConsumer : IConsumer<СhangeItemRequest>
         _dbContext = dbContext;
     }
 
-    public async Task Consume(ConsumeContext<СhangeItemRequest> context)
+    public async Task Consume(ConsumeContext<ChangeItemRequest> context)
     {
         var message = context.Message;
 

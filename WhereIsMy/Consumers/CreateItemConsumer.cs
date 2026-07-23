@@ -2,7 +2,7 @@ using MassTransit;
 using Microsoft.EntityFrameworkCore;
 
 namespace WhereIsMy;
-public class CreateItemConsumer : IConsumer<СhangeItemRequest>
+public class CreateItemConsumer : IConsumer<CreateItemRequest>
 {
     private readonly AppDbContext _dbContext;
 
@@ -11,22 +11,24 @@ public class CreateItemConsumer : IConsumer<СhangeItemRequest>
         _dbContext = dbContext;
     }
 
-    public async Task Consume(ConsumeContext<СhangeItemRequest> context)
+    public async Task Consume(ConsumeContext<CreateItemRequest> context)
     {
         var message = context.Message;
 
-        var location = await _dbContext.Locations
-            .FirstOrDefaultAsync(x => x.Id == message.NewLocationId && x.UserId == message.UserId);
+        int? locationId = null;
 
-        if (location is null)
+        if (message.LocationId.HasValue)
         {
-            throw new InvalidOperationException($"Location with ID {message.NewLocationId} was not found for user {message.UserId}.");
+            locationId = await _dbContext.Locations
+                .Where(x => x.Id == message.LocationId.Value && x.UserId == message.UserId)
+                .Select(x => (int?)x.Id)
+                .FirstOrDefaultAsync();
         }
 
         var newItem = new Item
         {
-            Name = message.NewName,
-            LocationId = location.Id,
+            Name = string.IsNullOrWhiteSpace(message.Name) ? "Без названия" : message.Name.Trim(),
+            LocationId = locationId,
             UserId = message.UserId
         };
 

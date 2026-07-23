@@ -35,6 +35,15 @@ public class LocationsController : ControllerBase
     public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationRequest request)
     {
         var userId = GetCurrentUserId();
+
+        var locationExists = await _dbContext.Locations
+            .AnyAsync(x => x.Id == request.LocationId && x.UserId == userId);
+
+        if (!locationExists)
+        {
+            return NotFound(new { message = "Локация не найдена или не принадлежит текущему пользователю" });
+        }
+
         await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });
@@ -44,6 +53,15 @@ public class LocationsController : ControllerBase
     public async Task<IActionResult> DeleteLocation([FromBody] DeleteLocationRequest request)
     {
         var userId = GetCurrentUserId();
+
+        var locationExists = await _dbContext.Locations
+            .AnyAsync(x => x.Id == request.LocationId && x.UserId == userId);
+
+        if (!locationExists)
+        {
+            return NotFound(new { message = "Локация не найдена или не принадлежит текущему пользователю" });
+        }
+
         await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });

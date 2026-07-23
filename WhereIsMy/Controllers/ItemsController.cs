@@ -24,6 +24,15 @@ public class ItemsController : ControllerBase
     public async Task<IActionResult> ChangeItem([FromBody] ChangeItemRequest request)
     {
         var userId = GetCurrentUserId();
+
+        var itemExists = await _dbContext.Items
+            .AnyAsync(x => x.Id == request.ItemId && x.UserId == userId);
+
+        if (!itemExists)
+        {
+            return NotFound(new { message = "Товар не найден или не принадлежит текущему пользователю" });
+        }
+
         await _publishEndpoint.Publish<ChangeItemRequest>(request with { UserId = userId });
         
         return Accepted(new { message = "Запроc принят MassTransit" });
@@ -42,6 +51,15 @@ public class ItemsController : ControllerBase
     public async Task<IActionResult> DeleteItem([FromBody] DeleteItemRequest request)
     {
         var userId = GetCurrentUserId();
+
+        var itemExists = await _dbContext.Items
+            .AnyAsync(x => x.Id == request.ItemId && x.UserId == userId);
+
+        if (!itemExists)
+        {
+            return NotFound(new { message = "Товар не найден или не принадлежит текущему пользователю" });
+        }
+
         await _publishEndpoint.Publish<DeleteItemRequest>(request with { UserId = userId });
         
         return Accepted(new { message = "Запроc принят MassTransit" });

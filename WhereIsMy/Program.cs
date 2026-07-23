@@ -7,6 +7,7 @@ using WhereIsMy;
 using RabbitMQ.Client;
 using MassTransit;
 using Scalar.AspNetCore;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,7 +40,43 @@ builder.Services.AddMassTransit(x =>
 builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddOpenApi();
+
+builder.Services.AddOpenApi(options =>
+{
+    options.AddDocumentTransformer((document, context, cancellationToken) =>
+    {
+        // 1. Описываем схему авторизации (Bearer JWT)
+        var scheme = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.Http,
+            Scheme = "bearer",
+            BearerFormat = "JWT",
+            Description = "Введите ваш JWT токен в формате: Bearer {токен}"
+        };
+
+        document.Components ??= new OpenApiComponents();
+        document.Components.SecuritySchemes.Add("Bearer", scheme);
+
+        // 2. Применяем авторизацию глобально ко всем эндпоинтам
+        var requirement = new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference 
+                    { 
+                        Type = ReferenceType.SecurityScheme, 
+                        Id = "Bearer" 
+                    }
+                },
+                Array.Empty<string>()
+            }
+        };
+        document.SecurityRequirements = new List<OpenApiSecurityRequirement> { requirement };
+
+        return Task.CompletedTask;
+    });
+});
 
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

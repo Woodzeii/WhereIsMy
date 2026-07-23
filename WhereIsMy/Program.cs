@@ -1,28 +1,29 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using WhereIsMy;
 using RabbitMQ.Client;
 using MassTransit;
+using Scalar.AspNetCore;
 
-// БЛОК 1: Инициализация строителя приложения
 var builder = WebApplication.CreateBuilder(args);
 
-
-
-
-
-
-// БЛОК 2: Регистрация зависимостей в DI-контейнере
-
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var jwtKey = builder.Configuration["Jwt:Key"];
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "WhereIsMy";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "WhereIsMyClient";
 
-// Настройка MassTransit
+if (string.IsNullOrWhiteSpace(jwtKey))
+{
+    throw new InvalidOperationException("JWT secret key is not configured. Set Jwt:Key in appsettings.json.");
+}
+
 builder.Services.AddMassTransit(x =>
 {
-    // 1. Регистрируем потребителя (Consumer), который будет обрабатывать сообщения
-    x.AddConsumer<ChangeItemConsumer>();
+    x.AddConsumers(typeof(Program).Assembly);
 
-    // 2. Настраиваем транспорт RabbitMQ
     x.UsingRabbitMq((context, cfg) =>
     {
         cfg.Host("localhost", "/", h =>
@@ -31,29 +32,44 @@ builder.Services.AddMassTransit(x =>
             h.Password("guest");
         });
 
-        // Автоматически создает очереди для всех зарегистрированных Consumer'ов
         cfg.ConfigureEndpoints(context);
     });
 });
-//builder.Services.AddHostedService<MoveItemConsumer>();
 
 builder.Services.AddControllers();
+builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddOpenApi();
 
-builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString)); 
-builder.Services.AddEndpointsApiExplorer(); 
-builder.Services.AddOpenApi(); // Регистрируем сервисы для генерации спецификации OpenAPI (Swagger)          
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtIssuer,
+            ValidAudience = jwtAudience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+        };
+    });
 
-// БЛОК 3: Построение экземпляра приложения
+builder.Services.AddAuthorization();
+
 var app = builder.Build();
 
-// БЛОК 4: Настройка конвейера Middleware и запуск эндпоинтов
-// Включаем OpenAPI только в режиме разработки (для безопасности production)
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();   // Генерирует спецификацию в формате JSON
-    
+    app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.UseHttpsRedirection();
+app.UseAuthentication();
+app.UseAuthorization();
+app.MapControllers();
 
-app.Run(); 
+app.Run();

@@ -1,10 +1,12 @@
 using MassTransit;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 namespace WhereIsMy;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class LocationsController : ControllerBase
 {
     private readonly AppDbContext _dbContext;

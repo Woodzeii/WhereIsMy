@@ -55,17 +55,16 @@ public class LocationsController : ControllerBase
     [HttpGet("location/{id}")]
     public async Task<IActionResult> GetLocation(int id)
     {
-       // 1. Ищем товар в базе данных (вместо _dbContext может быть ваш репозиторий)
-        var location = await _dbContext.Locations
-            .FirstOrDefaultAsync(x => x.Id == id);
+        var userId = GetCurrentUserId();
 
-        // 2. Если товар не найден — сразу возвращаем 404 Not Found
+        var location = await _dbContext.Locations
+            .FirstOrDefaultAsync(x => x.Id == id && x.UserId == userId);
+
         if (location == null)
         {
-            return NotFound(new { message = $"Локация с ID {id} не найдена" });
+            return NotFound(new { message = $"Локация с ID {id} не найдена или не принадлежит текущему пользователю" });
         }
 
-        // 3. Если найден — возвращаем 200 OK вместе с данными товара
         return Ok(location);
     }
     [HttpGet("locations")]

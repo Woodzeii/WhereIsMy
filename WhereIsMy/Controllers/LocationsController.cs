@@ -33,5 +33,5 @@ public class LocationsController : ControllerBase
 }
 
 public record CreateLocationRequest(string Name, int UserId);
-public record UpdateLocationRequest(int Id, string NewName);
+public record UpdateLocationRequest(int LocationId, string NewName, int UserId);
 

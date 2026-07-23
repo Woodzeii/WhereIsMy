@@ -20,7 +20,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddMassTransit(x =>
 {
     // 1. Регистрируем потребителя (Consumer), который будет обрабатывать сообщения
-    x.AddConsumer<MoveItemConsumer>();
+    x.AddConsumer<ChangeItemConsumer>();
 
     // 2. Настраиваем транспорт RabbitMQ
     x.UsingRabbitMq((context, cfg) =>

@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -21,31 +22,29 @@ public class LocationsController : ControllerBase
     
 
   
-    // СОЗДАНИЕ ЛОКАЦИИ
     [HttpPost("location")]
     public async Task<IActionResult> CreateLocation([FromBody] CreateLocationRequest request)
     {
-        
-        await _publishEndpoint.Publish(request);
-        
-        return Accepted(new { message = "Запрос принят MassTransit" });
-    }
-    // ОБНОВЛЕНИЕ ЛОКАЦИИ
-    [HttpPut("location/{id}")]
-    public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationRequest request)
-    {
-        // Логика обновления локации
-         await _publishEndpoint.Publish(request);
+        var userId = GetCurrentUserId();
+        await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });
     }
 
-    //Удаление локации
+    [HttpPut("location/{id}")]
+    public async Task<IActionResult> UpdateLocation([FromBody] UpdateLocationRequest request)
+    {
+        var userId = GetCurrentUserId();
+        await _publishEndpoint.Publish(request with { UserId = userId });
+        
+        return Accepted(new { message = "Запрос принят MassTransit" });
+    }
+
     [HttpDelete("location/{id}")]
     public async Task<IActionResult> DeleteLocation([FromBody] DeleteLocationRequest request)
     {
-        // Логика удаления локации
-         await _publishEndpoint.Publish(request);
+        var userId = GetCurrentUserId();
+        await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });
     }
@@ -69,12 +68,23 @@ public class LocationsController : ControllerBase
         // 3. Если найден — возвращаем 200 OK вместе с данными товара
         return Ok(location);
     }
-    //Получить ВСЕ ЛОКАЦИИ
     [HttpGet("locations")]
     public async Task<IActionResult> GetAllLocations()
     {
-        var locations = await _dbContext.Locations.ToListAsync();
+        var userId = GetCurrentUserId();
+        var locations = await _dbContext.Locations
+            .Where(x => x.UserId == userId)
+            .ToListAsync();
+
         return Ok(locations);
+    }
+
+    private int GetCurrentUserId()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
+
+        return int.Parse(claim ?? throw new UnauthorizedAccessException("Пользователь не найден в токене"));
     }
 }
 

@@ -79,6 +79,29 @@ public class AuthController : ControllerBase
         return Ok(new AuthResponse(user.Id, user.Name, user.Login, token));
     }
 
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> GetMe()
+    {
+        var userId = GetCurrentUserId();
+        var user = await _dbContext.Users.FirstOrDefaultAsync(x => x.Id == userId);
+
+        if (user is null)
+        {
+            return NotFound(new { message = "Пользователь не найден" });
+        }
+
+        return Ok(new { id = user.Id, name = user.Name, login = user.Login });
+    }
+
+    private int GetCurrentUserId()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        return int.Parse(claim ?? throw new UnauthorizedAccessException("Пользователь не найден в токене"));
+    }
+
     private string GenerateJwtToken(User user)
     {
         var jwtKey = _configuration["Jwt:Key"] ?? throw new InvalidOperationException("JWT key is not configured");

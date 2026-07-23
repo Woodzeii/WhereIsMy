@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using MassTransit;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -19,32 +20,29 @@ public class ItemsController : ControllerBase
         _dbContext = dbContext;
     }
 
-    // Передел
     [HttpPut("item/{id}")]
     public async Task<IActionResult> ChangeItem([FromBody] СhangeItemRequest request)
     {
-        // MassTransit сам упакует объект в JSON, байты и отправит в RabbitMQ
-        await _publishEndpoint.Publish(request);
+        var userId = GetCurrentUserId();
+        await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });
     }
 
-    // СОЗДАНИЕ
     [HttpPost("item")]
     public async Task<IActionResult> CreateItem([FromBody] CreateItemRequest request)
     {
-        // MassTransit сам упакует объект в JSON, байты и отправит в RabbitMQ
-        await _publishEndpoint.Publish(request);
+        var userId = GetCurrentUserId();
+        await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });
     }
 
-    //Удаление
     [HttpDelete("item/{id}")]
     public async Task<IActionResult> DeleteItem([FromBody] DeleteItemRequest request)
     {
-        // MassTransit сам упакует объект в JSON, байты и отправит в RabbitMQ
-        await _publishEndpoint.Publish(request);
+        var userId = GetCurrentUserId();
+        await _publishEndpoint.Publish(request with { UserId = userId });
         
         return Accepted(new { message = "Запрос принят MassTransit" });
     }
@@ -68,16 +66,24 @@ public class ItemsController : ControllerBase
         return Ok(item);
     }
 
-    //Получить ВСЕ ВЕЩИ
     [HttpGet("items")]
     public async Task<IActionResult> GetAllItems()
     {
-        var items = await _dbContext.Items.ToListAsync();
+        var userId = GetCurrentUserId();
+        var items = await _dbContext.Items
+            .Where(x => x.UserId == userId)
+            .ToListAsync();
+
         return Ok(items);
     }
 
+    private int GetCurrentUserId()
+    {
+        var claim = User.FindFirstValue(ClaimTypes.NameIdentifier)
+            ?? User.FindFirstValue("sub");
 
-
+        return int.Parse(claim ?? throw new UnauthorizedAccessException("Пользователь не найден в токене"));
+    }
 }
 
 public record СhangeItemRequest(int ItemId, string NewName, int NewLocationId, int UserId);
